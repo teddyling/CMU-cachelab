@@ -1,21 +1,64 @@
+#include "cachelab.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
-#include "cachelab.h"
 
 #define FILENAMELENGTH 100
 #define LINELENGTH 64
+
+typedef struct DLLNode {
+    struct DLLNode* next;
+    struct DLLNode* prev;
+    unsigned long tag;
+} Node;
+
+typedef struct DoublyLinkedList {
+    Node* head;
+    Node* tail;
+    int* capacity;
+} DLL;
+
 void getArguments(int argc, char ** argv);
 void printMessage(void);
 void processTraceFile(char *afile);
+void initializeCache(int setNum);
+void addLast(Node* n);
+void deleteNode(Node* n);
+
 int quit = 0;
 int verbose;
 int setBit = -1;
 int blockBit = -1;
 int linesPerSet = -1;
 char fileName[FILENAMELENGTH] = "";
+DLL* cache;
+
+void initializeCache(int setNum) {
+    for (int i = 0; i < setNum; i++) {
+        cache[i].head = malloc(sizeof(Node));
+        cache[i].tail = malloc(sizeof(Node));
+        cache[i].capacity = calloc(1, sizeof(int));
+        cache[i].head->next = cache[i].tail;
+        cache[i].tail->prev = cache[i].head;
+        
+    }
+}
+
+void addLast(Node* n) {
+    cache->tail->prev->next = n;
+    n->prev = cache->tail->prev;
+    n->next = cache->tail;
+    cache->tail->prev = n;
+    *(cache->capacity) = *(cache->capacity) + 1;
+}
+
+void deleteNode(Node* n) {
+    n->prev->next = n->next;
+    n->next->prev = n->prev;
+    *(cache->capacity) = *(cache->capacity) - 1;
+}
 
 int main(int argc, char **argv) {
     getArguments(argc, argv);
@@ -95,7 +138,6 @@ void processTraceFile(char *afile) {
         printf("type is %c, address is %lx, block is %ld\n", type, address, block);
         if ((type != 'S' && type != 'L') || *left != ',') {
             printf("Wrong Input!\n");
-
         }
     }
 
