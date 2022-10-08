@@ -6,10 +6,10 @@
 #include "cachelab.h"
 
 #define FILENAMELENGTH 100
-
+#define LINELENGTH 64
 void getArguments(int argc, char ** argv);
 void printMessage(void);
-
+void processTraceFile(char *afile);
 int quit = 0;
 int verbose;
 int setBit = -1;
@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
     printf("Block bits: %d\n", blockBit);
     printf("lines per set: %d\n", linesPerSet);
     printf("trace file name: %s\n", fileName);
+    processTraceFile(fileName);
+
     return 0;
 }
 
@@ -72,4 +74,29 @@ void printMessage(void) {
     printf("    -E <E>    Number of lines per set (associativity)\n");
     printf("    -t <trace >    File name of the memory trace to process\n");
     printf("The -s, -b, -E, and -t options must be supplied for all simulations.\n");
+}
+
+void processTraceFile(char *afile) {
+    FILE *inputTrace = fopen(afile, "r");
+    if (!inputTrace) {
+        printf("Failed open trace file!\n");
+        return;
+    }
+    char lineBuffer[LINELENGTH];
+    char type;
+    char* left;
+    char* end;
+    unsigned long address;
+    unsigned long block;
+    while (fgets(lineBuffer, LINELENGTH, inputTrace)) {
+        type = lineBuffer[0];
+        address = strtoul(lineBuffer + 2, &left, 16);
+        block = strtoul(left + 1, &end, 10);
+        printf("type is %c, address is %lx, block is %ld\n", type, address, block);
+        if ((type != 'S' && type != 'L') || *left != ',') {
+            printf("Wrong Input!\n");
+
+        }
+    }
+
 }
