@@ -26,7 +26,7 @@
  *     other tricks to hide array data in other forms of local or global memory.
  *
  * TODO: fill in your name and Andrew ID below.
- * @author Your Name <andrewid@andrew.cmu.edu>
+ * @author Taichen Ling taichenl@andrew.cmu.edu
  */
 
 #include <assert.h>
@@ -130,6 +130,40 @@ static void transpose_submit(size_t M, size_t N, double A[N][M], double B[M][N],
         trans_tmp(M, N, A, B, tmp);
 }
 
+static void transpose_1(size_t M, size_t N, double A[N][M], double B[M][N], double tmp[TMPCOUNT]) {
+    if (N == 32.0 && M == 32.0) {
+        int tmpIndex = TMPCOUNT - 1;
+        for (size_t i = 0; i < N; i += 8) {
+            for (size_t j = 0; j < M; j += 8) {
+                for (size_t ii = i; ii < i + 8; ii++) {
+                    for (size_t jj = j; jj < j + 8; jj++) {
+                        if (ii == jj) {
+                            tmp[tmpIndex] = A[ii][jj];
+                            tmpIndex--;
+                            continue;
+                        }
+                        B[jj][ii] = A[ii][jj];
+                    }
+                }
+            }
+        }
+        for (size_t i = 0; i < 32; i++) {
+            B[i][i] = tmp[TMPCOUNT - 1 - i];
+        }
+    } 
+    else {
+        for (size_t i = 0; i < N; i+= 8) {
+            for (size_t j = 0; j < M; j+= 8) {
+                for (size_t ii = i; ii < i + 8; ii++) {
+                    for (size_t jj = j; jj < j + 8; jj++) {
+                        B[jj][ii] = A[ii][jj];
+                    }
+                }
+            }
+        }
+
+    }
+}
 /**
  * @brief Registers all transpose functions with the driver.
  *
@@ -142,6 +176,5 @@ void registerFunctions(void) {
     registerTransFunction(transpose_submit, SUBMIT_DESCRIPTION);
 
     // Register any additional transpose functions
-    registerTransFunction(trans_basic, "Basic transpose");
-    registerTransFunction(trans_tmp, "Transpose using the temporary array");
+    registerTransFunction(transpose_1, "1 Attempt");
 }
