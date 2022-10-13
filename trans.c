@@ -122,15 +122,17 @@ static void trans_tmp(size_t M, size_t N, double A[N][M], double B[M][N],
  * It's OK to choose different functions based on array size, but
  * this function must be correct for all values of M and N.
  */
-static void transpose_submit(size_t M, size_t N, double A[N][M], double B[M][N],
-                             double tmp[TMPCOUNT]) {
+static void transpose_1(size_t M, size_t N, double A[N][M], double B[M][N],
+                        double tmp[TMPCOUNT]) {
     if (M == N)
         trans_basic(M, N, A, B, tmp);
     else
         trans_tmp(M, N, A, B, tmp);
 }
 
-static void transpose_1(size_t M, size_t N, double A[N][M], double B[M][N], double tmp[TMPCOUNT]) {
+static void transpose_submit(size_t M, size_t N, double A[N][M], double B[M][N],
+                             double tmp[TMPCOUNT]) {
+
     if (N == 32.0 && M == 32.0) {
         int tmpIndex = TMPCOUNT - 1;
         for (size_t i = 0; i < N; i += 8) {
@@ -150,10 +152,9 @@ static void transpose_1(size_t M, size_t N, double A[N][M], double B[M][N], doub
         for (size_t i = 0; i < 32; i++) {
             B[i][i] = tmp[TMPCOUNT - 1 - i];
         }
-    } 
-    else {
-        for (size_t i = 0; i < N; i+= 8) {
-            for (size_t j = 0; j < M; j+= 8) {
+    } else if (M == 1024.0 && N == 1024.0) {
+        for (size_t i = 0; i < N; i += 8) {
+            for (size_t j = 0; j < M; j += 8) {
                 for (size_t ii = i; ii < i + 8; ii++) {
                     for (size_t jj = j; jj < j + 8; jj++) {
                         B[jj][ii] = A[ii][jj];
@@ -161,7 +162,10 @@ static void transpose_1(size_t M, size_t N, double A[N][M], double B[M][N], doub
                 }
             }
         }
-
+    } else if (M == N) {
+        trans_basic(M, N, A, B, tmp);
+    } else {
+        trans_tmp(M, N, A, B, tmp);
     }
 }
 /**
